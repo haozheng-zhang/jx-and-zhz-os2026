@@ -1,5 +1,8 @@
 #include <default_pmm.h>
 #include <best_fit_pmm.h>
+#ifdef PMM_USE_BUDDY
+#include <buddy_pmm.h>
+#endif
 #include <defs.h>
 #include <error.h>
 #include <memlayout.h>
@@ -34,7 +37,11 @@ static void check_alloc_page(void);
 
 // init_pmm_manager - initialize a pmm_manager instance
 static void init_pmm_manager(void) {
-    pmm_manager = &default_pmm_manager;
+#ifdef PMM_USE_BUDDY
+    pmm_manager = &buddy_pmm_manager;
+#else
+    pmm_manager = &best_fit_pmm_manager;
+#endif
     cprintf("memory management: %s\n", pmm_manager->name);
     pmm_manager->init();
 }
@@ -61,7 +68,7 @@ size_t nr_free_pages(void) {
     return pmm_manager->nr_free_pages();
 }
 
-//lab2 function1 YOUR CODE
+//lab2 function1 2413790
 static void page_init(void) {
     extern char end[];
     uint64_t mem_base = get_memory_base();
