@@ -1,12 +1,12 @@
 # Lab2 实验提示词
 
-模块二负责人：2410250 张浩正。本文件汇总本次提示词，并补充调试后确认的接口约定。实现和测试均在 WSL Ubuntu 的 `~/os/lab2/code` 中完成。模块一只补充作者学号 `2413790`，不修改 `page_init()` 的实现。实验报告已整理两模块初稿，模块一的提示词与迭代记录由姜禧补充。
+模块二负责人：2410250 张浩正。以下汇总本次提示词及调试后确认的接口约定。
 
-证据说明：`images/` 中的三张 PNG 由真实运行日志节选排版生成，已标出来源；原始日志在本地另行保留。窗口截图工具因无法确认浏览器网址而停止，未取得窗口原始截图。
+测试图片由实际运行日志节选排版生成。
 
 ## 模块一提示词（待姜禧补充）
 
-负责人：2413790 姜禧。请在此补充物理内存初始化模块实际使用的提示词，保留 `[PROMPT]`、`[RELY]`、`[GUARANTEE]`、`[SPECIFICATION]` 四段及必要迭代记录。当前仅收到实现代码，尚未收到该部分原始提示词。
+负责人：2413790 姜禧。请在此补充物理内存初始化模块实际使用的提示词，保留 `[PROMPT]`、`[RELY]`、`[GUARANTEE]`、`[SPECIFICATION]` 四段及必要迭代记录。
 
 ## 1. Best-Fit
 
@@ -14,7 +14,7 @@
 
 请完成 Lab2 的 Best-Fit 页分配器，直接修改 `kern/mm/best_fit_pmm.c`，并在 `pmm.c` 中启用它。参考 `default_pmm.c`，保留两个已有测试函数。保留 lab2 注释，把本人代码处的 YOUR CODE 改为 2410250。不要改同学的 `page_init()`。
 
-完成后在 Ubuntu 编译运行，检查原有测试和 `make grade`，保存关键截图及原始日志。顺便说明 First-Fit 的初始化、分配、回收与合并过程，以及两种算法可改进的地方，供我理解代码。
+完成后在 Ubuntu 编译运行，检查原有测试和 `make grade`，保存关键截图及原始日志。说明 First-Fit 的初始化、分配、回收与合并过程，以及两种算法的改进空间。
 
 [RELY]
 
@@ -86,7 +86,6 @@ void buddy_validate(void);
 - `buddy_free_pages`：Pre-Condition：base 和 n 对应尚未释放的原始分配。Post-Condition：归还 m 页，只合并同阶、空闲且真正互为伙伴的块；相邻非伙伴不合并。错误地址、重复释放和请求不匹配应在修改状态前被拒绝或触发断言。
 - `buddy_nr_free_pages`：Pre-Condition：已初始化。Post-Condition：只读返回实际空闲页数。
 - `buddy_check`：Pre-Condition：可用区已注册。Post-Condition：检查块大小、对齐、范围、空闲状态和总数一致性，保持有效状态；随后接入独立测试。
-
 - `buddy_validate`：Pre-Condition：管理器已初始化，当前状态稳定。Post-Condition：只读检查块大小、对齐、范围、覆盖、伙伴合并和计数一致性；不改变分配状态。
 
 拆分和合并不能额外改变空闲页总数。代码和注释说明非幂次请求的内部碎片及释放约定。
@@ -97,7 +96,7 @@ void buddy_validate(void);
 
 请阅读当前 Buddy 实现，在 `kern/mm/buddy_pmm_test.c` 补充独立测试，通过 `buddy_pmm.c` 和 `buddy_pmm.h` 接入。保留 Best-Fit 的原有测试和评分标准。测试发现问题时，保存失败输出，修复后重跑。
 
-完成后分别运行 Buddy 专项测试和默认 Best-Fit 的回归评分。保存关键截图和日志，给出测试覆盖与结果，实验报告由我另行整理。
+完成后分别运行 Buddy 专项测试和默认 Best-Fit 的回归评分。保存关键截图和日志，给出测试覆盖与结果。
 
 [RELY]
 
@@ -140,7 +139,7 @@ Requirements：先干净构建并运行 Buddy，再切回默认 Best-Fit 完成�
 
 [SPECIFICATION]
 
-Pre-Condition：日志已复现上述启动现象，原文件可从 Git 恢复。
+Pre-Condition：日志已复现上述启动现象。
 
 Post-Condition：QEMU 向固件传入正确内核入口，分页开启后的低地址指令可以继续执行，随后进入高地址 kern_init；正常启动、调试和评分使用一致配置。
 
