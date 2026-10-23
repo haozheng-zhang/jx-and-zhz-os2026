@@ -1,14 +1,95 @@
 # Lab2 实验提示词
 
-模块二负责人：2410250 张浩正。以下汇总本次提示词及调试后确认的接口约定。
+模块一负责人：2413790 姜禧；模块二负责人：2410250 张浩正。以下按功能模块顺序汇总提示词。
 
-测试图片由实际运行日志节选排版生成。
+## 功能模块一：物理内存初始化
 
-## 模块一提示词（待姜禧补充）
+负责人：2413790 姜禧。
 
-负责人：2413790 姜禧。请在此补充物理内存初始化模块实际使用的提示词，保留 `[PROMPT]`、`[RELY]`、`[GUARANTEE]`、`[SPECIFICATION]` 四段及必要迭代记录。
+[PROMPT]
 
-## 1. Best-Fit
+实现物理内存探测与页描述符初始化功能，在 `kern/mm/pmm.c` 中自行设计并实现 `static void page_init(void)`。
+
+必须修改实际文件，不能仅展示代码。不修改代码中已有的接口和函数，不修改 `pmm.h` 等头文件已有的接口和结构体。以工程代码为准，不引入无关代码。
+
+明确区分虚拟地址、物理地址、物理页号和 Page 描述符地址；正确处理可管理上界和页面对齐，确保内核及描述符数组不会进入空闲区。设备树信息无效时终止初始化，没有可用完整页面时不得调用 `init_memmap()`。
+
+[RELY]
+
+使用工程中已有的物理内存管理器接口、设备树内存查询接口、管理器初始化逻辑和页描述符结构。原提示词提供的依赖如下，以实际工程定义为准：
+
+```c
+struct pmm_manager {
+    const char *name;  // XXX_pmm_manager's name
+    void (*init)(
+        void);  // initialize internal description&management data structure
+                // (free block list, number of free block) of XXX_pmm_manager
+    void (*init_memmap)(
+        struct Page *base,
+        size_t n);  // setup description&management data structcure according to
+                    // the initial free physical memory space
+    struct Page *(*alloc_pages)(
+        size_t n);  // allocate >=n pages, depend on the allocation algorithm
+    void (*free_pages)(struct Page *base, size_t n);  // free >=n pages with
+                                                      // "base" addr of Page
+                                                      // descriptor
+                                                      // structures(memlayout.h)
+    size_t (*nr_free_pages)(void);  // return the number of free pages
+    void (*check)(void);            // check the correctness of XXX_pmm_manager
+};
+// kern/driver/dtb.h 中已有的声明
+uint64_t get_memory_base(void);
+uint64_t get_memory_size(void);
+
+static void init_pmm_manager(void) {
+    pmm_manager = &default_pmm_manager;
+    cprintf("memory management: %s\n", pmm_manager->name);
+    pmm_manager->init();
+}
+struct Page {
+    int ref;                        // page frame's reference counter
+    uint64_t flags;                 // array of flags that describe the status of the page frame
+    unsigned int property;          // the num of free block, used in first fit pm manager
+    list_entry_t page_link;         // free list link
+};
+```
+
+[GUARANTEE]
+
+实现：
+
+```c
+static void page_init(void);
+```
+
+使内核能够识别、组织并将可用物理内存交给当前管理器。整体实现链为：
+
+```text
+pmm_init()
+  → init_pmm_manager()
+  → page_init()
+  → init_memmap()
+  → 后续 alloc_pages() / free_pages()
+```
+
+仅可根据需要在当前模块内增加内部辅助函数，不新建跨文件接口。
+
+[SPECIFICATION]
+
+Pre-Condition：`init_pmm_manager()` 已选择并初始化具体的物理内存管理器。
+
+Post-Condition：
+
+- 成功时，正确设置 `va_pa_offset`、`npage` 和 `pages`，输出探测到的物理内存范围，并完成当前管理器初始空闲区的注册。
+- 设备树信息无效时，终止初始化。
+
+Requirements：没有可用完整页面时，不得调用 `init_memmap()`。
+
+## 功能模块二：物理内存分配
+
+负责人：2410250 张浩正。依次列出 Best-Fit、Buddy 实现及 Buddy 独立测试提示词；First-Fit 的分析要求包含在 Best-Fit 提示词中。
+
+### 1. Best-Fit
 
 [PROMPT]
 
@@ -48,7 +129,7 @@ static void init_pmm_manager(void);
 
 通过真实断言检查最小适配、拆分、合并、资源不足和计数恢复。测试失败时保留输出，修复原因后重跑，不修改评分标准。
 
-## 2. Buddy System
+### 2. Buddy System
 
 [PROMPT]
 
@@ -90,7 +171,7 @@ void buddy_validate(void);
 
 拆分和合并不能额外改变空闲页总数。代码和注释说明非幂次请求的内部碎片及释放约定。
 
-## 3. Buddy 独立测试
+### 3. Buddy 独立测试
 
 [PROMPT]
 
@@ -123,24 +204,3 @@ Post-Condition：以下行为经过实际断言验证，测试分配全部回收
 
 Requirements：先干净构建并运行 Buddy，再切回默认 Best-Fit 完成评分。每个 PASS 对应真实断言，不用固定输出代替测试。截图保留命令、管理器名称和关键结果；如实记录实际发生的问题。
 
-## 4. 启动兼容修正
-
-[PROMPT]
-
-当前 Ubuntu 中，旧 loader 命令让 OpenSBI 的 Next Address 为 0。改用 -kernel 后能够到达内核入口，但 GDB 显示开启 satp 后无法读取低地址的下一条指令。请修正启动链路，保留现有算法、测试和同学的 page_init()。
-
-[RELY]
-
-本机使用 QEMU 8.2.2、OpenSBI 1.3 和 gdb-multiarch。入口先在 0x80200000 执行，再开启 Sv39 并跳到高地址；原启动页表只设置第 511 项。Makefile 和 tools/grade.sh 各有 QEMU 启动命令。
-
-[GUARANTEE]
-
-调整 Makefile 与评分脚本中的启动/调试命令，并修正 entry.S 的启动页表过渡。评分脚本退出时回收本次启动的 QEMU 进程。保留评分断言和预期输出。
-
-[SPECIFICATION]
-
-Pre-Condition：日志已复现上述启动现象。
-
-Post-Condition：QEMU 向固件传入正确内核入口，分页开启后的低地址指令可以继续执行，随后进入高地址 kern_init；正常启动、调试和评分使用一致配置。
-
-Requirements：仅补上必要的启动映射和工具适配，验证实际输出及检查结果，保存修复前后的日志。不要改变模块一实现或评分通过条件。
