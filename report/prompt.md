@@ -96,9 +96,12 @@ get_pte(pgdir, la, 0) → 无有效映射则直接返回 → 用 pte2page() 取�
 
 Pre-Condition：
 pgdir 指向一个有效、可写的根页表并且page 指向物理页管理器中一个已分配的页描述符。
+
 Post-Condition：
-case1：如果失败则返回 -E_NO_MEM且不能留下半完成映射。
-case2：成功时应让指定线性地址稳定映射到目标物理页，更新引用计数，并检查TLB的状态
+
+- case1：如果失败则返回 -E_NO_MEM且不能留下半完成映射。
+- case2：成功时应让指定线性地址稳定映射到目标物理页，更新引用计数，并检查TLB的状态
+
 Requirements：
 保持“页表项内容、物理页引用计数、TLB 状态”三者同步
 
@@ -106,9 +109,12 @@ Requirements：
 #### page_remove()：
 
 Pre-Condition：pgdir 指向一个有效、可写的根页表， la是一个正确的虚拟地址
+
 Post-Condition：
-case1：如果目标地址无映射就返回
-case2：成功删除映射，更新引用计数，并检查TLB的状态
+
+- case1：如果目标地址无映射就返回
+- case2：成功删除映射，更新引用计数，并检查TLB的状态
+
 Requirements：不应把“未映射地址”当作异常情况，不能假定目标地址一定存在有效映射。
 
 ## 功能模块二：进程创建及初始化功能
@@ -183,43 +189,55 @@ proc_init()
 #### *alloc_proc(void)
 
 Pre-Condition：内核堆分配器已初始化。
+
 Post-Condition：返回一个已完成基础字段初始化的 PCB
+
 Requirements：alloc_proc 必须把 PCB 置于安全空白状态，避免后续代码误用未初始化字段；
 
 
 #### proc_init(void)：
 
 Pre-Condition：内存管理成功初始化
+
 Post-Condition：
-case1：失败时调用panic（）
-case2：成功时保证进程管理全局结构、idleproc、current 和 initproc 都处于可用状态
+
+- case1：失败时调用panic（）
+- case2：成功时保证进程管理全局结构、idleproc、current 和 initproc 都处于可用状态
+
 Requirements：proc_init 中的 idleproc 并不是普通 fork 出来的线程，而是直接复用当前执行现场
 
 #### kernel_thread（）：
 
 Pre-Condition：成功初始化 idleproc
+
 Post-Condition：把普通函数包装成可创建线程的上下文并返回新线程 PID；
 
 
 #### do_fork():
 
 Pre-Condition:成功初始化 idleproc,kernel_thread整理完毕上下文
+
 Post-Condition：
-case1：失败是返回负错误码
-case2：成功时返回新线程的PID
+
+- case1：失败是返回负错误码
+- case2：成功时返回新线程的PID
+
 Requirements：必须正确处理失败清理、PID 分配、链表挂接和唤醒顺序
 
 
 #### copy_thread():
 
 Pre-Condition：新线程的 PCB 和内核栈已准备好，tf 指向有效的trapframe。
+
 Post-Condition：将 *tf 复制到新线程的内核栈上
+
 Requirements：kernel_thread 与 copy_thread 必须配合 forkret、forkrets、__trapret 形成正确的首次运行链路；
 
 
 #### copy_mm():
 
 Pre-Condition：新的PCB已经初始化
+
 Post-Condition：承担地址空间处理接口的占位作用
 
 
