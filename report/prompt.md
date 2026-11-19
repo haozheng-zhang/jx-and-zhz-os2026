@@ -243,3 +243,90 @@ Post-Condition：承担地址空间处理接口的占位作用
 
 
 
+
+
+## 功能模块三：进程调度
+
+负责人：2410250 张浩正。
+
+```text
+[PROMPT]
+完成 Lab4 模块三，在 proc.c、sched.c 和 switch.S 中实现进程调度。
+保留模块一、二和原评分测试，把模块三的 YOUR CODE 改为 2410250。
+在 Ubuntu、QEMU 4.1.1 下验证，保存关键截图和原始日志。
+
+[RELY]
+以 proc_struct、context、proc_list、current 和 idleproc 的实际定义为准。
+使用现有链表、中断保护和 TLB 接口。
+pgdir 存放页表物理地址；satp 使用 Sv39 格式，参考 enable_paging，
+不要使用遗留的 Sv32 lsatp。
+新线程的初始现场已由模块二准备好。
+
+[GUARANTEE]
+实现 cpu_idle、schedule、proc_run 和 switch_to，保持函数签名。
+只补齐模块三，不扩展抢占调度和进程退出功能。
+
+[SPECIFICATION]
+前置：进程结构和链表已初始化，目标线程的页表、内核栈与现场有效。
+cpu_idle 持续检查 need_resched，有需要时调用 schedule。
+schedule 在关中断的临界区清除重调度标记，从当前位置向后循环查找
+PROC_RUNNABLE 线程；idle 从链表头查找，无可运行线程时选择 idle。
+更新所选线程的 runs，需要切换时调用 proc_run。
+proc_run 保存原中断状态，更新 current，写入 Sv39 satp 并刷新 TLB，
+调用 switch_to，当前线程以后恢复执行时还原原中断状态。
+switch_to 按 context 布局保存和恢复 ra、sp、s0—s11，
+使旧线程以后能从切换调用处继续，新线程能进入既有首次运行链路。
+后置：调度选择正确，页表与 current 一致，现场和中断状态能正确恢复。
+检查普通启动、原评分，以及空闲回退和多次切换等边界情况。
+```
+
+## 模块三补充验证
+
+负责人：2410250 张浩正。
+
+```text
+[PROMPT]
+给模块三补充边界测试，在临时副本中运行，保留真实日志。
+
+[RELY]
+使用现有进程链表、内核线程接口和 QEMU 4.1.1。
+
+[GUARANTEE]
+保留原代码和评分测试，新增独立测试脚本。
+
+[SPECIFICATION]
+检查空链表、全部阻塞、仅当前线程可运行和循环选择。
+用真实线程反复切换，检查上下文往返、寄存器哨兵、中断状态和页表。
+超时、断言失败或缺少结果都判失败，成功后正常关机。
+```
+
+## 验证过程中的排查提示词
+
+```text
+[PROMPT]
+普通启动通过，但 make grade 得到 0/30。检查 QEMU 与 GDB 的连接过程。
+
+[RELY]
+查看原评分脚本、GDB 错误和串口日志，继续使用 QEMU 4.1.1。
+
+[GUARANTEE]
+保留评分脚本和断言，只修复本地工具配置。
+
+[SPECIFICATION]
+确认评分需要的 GDB 命令存在，连接前选择正确的 RV64 架构。
+重新运行原评分，记录退出码和实际分数。
+```
+
+```text
+[PROMPT]
+补测在 satp 断言处失败，先核对测试期望。
+
+[RELY]
+SATP_MODE_SV39 的值是 8，需要左移 60 位；pgdir 是页表物理地址。
+
+[GUARANTEE]
+按实际定义修正测试，保留首次失败日志。
+
+[SPECIFICATION]
+核对模式位和根页表页号，重跑完整补测，不能放宽断言。
+```
